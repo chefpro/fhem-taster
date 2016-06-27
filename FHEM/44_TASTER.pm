@@ -1,5 +1,5 @@
 ﻿############################################################
-# $Id: 44_TASTER.pm 1000 2016-01-11 08:54:00Z ThomasRamm $ #
+# $Id: 44_TASTER.pm 1001 2016-06-27 17:44:00Z ThomasRamm $ #
 #
 ############################################################
 package main;
@@ -243,16 +243,19 @@ sub TASTER_Notify($$) {
   return if ($device ne $devName);
 
   my $port = $hash->{port};
+  $port //= "";
 
   my $max = int(@{$dev_hash->{CHANGED}}); # number of events / changes
   for (my $i = 0; $i < $max; $i++) {
     my $s = $dev_hash->{CHANGED}[$i];
-    return if ($s !~ /^$port/);
-
-    my @param = split(':',$s);
-    return if ($port ne $param[0]);
-
-    my $value = trim($param[1]);
+	if ($port ne "") {
+	  return if ($s !~ /^$port/);
+	  my @param = split(':',$s);
+	  return if ($port ne $param[0]);
+	  $value = trim($param[1]);
+	} else {
+	  $value = $s;
+	}
 
     #***** Änderung am Status meines Devices! *****#
     readingsSingleUpdate($hash,"value",$value,0);
