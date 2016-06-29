@@ -45,8 +45,8 @@ sub TASTER_Initialize($) {
     . " long-click-define"
     . " short-click-define"
     . " double-click-time"
-    . " double-click-define";
-    . " pushed-define"
+    . " double-click-define"
+    . " pushed-define";
   Log3 "global",4,"TASTER (?) << Initialize";
 }
 
