@@ -1,5 +1,5 @@
 # fhem-taster
-FHEM Modul 44_Taster
+FHEM Modul 44_Taster.pm
 
 Dieses Modul ist eine Erweiterung für die Hausautomatisierungsplattform [FHEM](http://fhem.de])
 Ziel dieses Moduls ist es auf einfache Weise Taster mehrfach zu belegen, so dass ein Tastendruck, doppelte Tastendrücke und lange Tastendrücke erkannt und unterschiedlich darauf reagiert werden kann.
