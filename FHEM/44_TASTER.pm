@@ -1,5 +1,5 @@
-﻿############################################################
-# $Id: 44_TASTER.pm 1000 2016-01-11 08:54:00Z ThomasRamm $ #
+############################################################
+# $Id: 44_TASTER.pm 1000 2016-08-29 20:00:00Z ThomasRamm $ #
 #
 ############################################################
 package main;
@@ -350,15 +350,69 @@ sub setzeStatus($$) {
 }
 
 1;
-=pod
 
+=pod
 =begin html
+
 <a name="TASTER"></a>
-<h3>TASTER</h3>
-<ul>
-        <a name="TASTER"></a>
-		Only german documentation available
-</ul>
+        <h3>TASTER</h3>
+        <p>Logical modul to extend a "on"/"off" reading for the possibility to evaluate the following states from an keystroke
+<ul><li>short press</li>
+<li>long press</li>
+<li>press twice</li>
+<li>key is being pressed</li></ul>.
+The main focus in this module is to evaluate the various keystrokes. The visualisation of the button status is for debugging very helpfull.
+In the definition you can define the name of your module and the name of a reading (port,adress)</p>
+        <h4>Example</h4>
+        <p>
+            <code>define button1 TASTER myMcp20 PortB1</code>
+            <br />
+        </p>
+        <br />
+        <a name="TASTERdefine"></a>
+        <h4>Define</h4>
+        <code>define &lt;name&gt; TASTER &lt;device&gt; &lt;port&gt; </code>
+        <p><code>[&lt;device&gt;]</code><br />The device whose reading should be evaluated</p>
+        <p><code>&lt;port&gt;</code><br />The evaluated port / reading of the device</p>
+        <br />
+        <br />
+        <a name="TASTERset"></a>
+        <h4>Set</h4>
+	<a name="TASTERsetter">
+                <ul>
+                  <li><code>set &lt;name&gt; pushed</code></a><br />trigger event 'pushed' of the button, trigger associated commands</li>
+		  <li><code>set &lt;name&gt; short-click</code></a><br /> trigger event 'short-click' of the button, trigger associated commands</li>
+		  <li><code>set &lt;name&gt; double-click</code></a><br /> trigger event 'double-click' of the button, trigger associated commands</li>
+		  <li><code>set &lt;name&gt; long-click</code></a><br /> trigger event 'long-click' of the button, trigger associated commands</li>
+                </ul>
+        <br />
+        <h4>Attributes</h4>
+        <p>Module-specific attributes:
+                   <a href="#long-click-time">long-click-time</a>,
+                   <a href="#long-click-define">long-click-define</a>,
+                   <a href="#short-click-define">short-click-define</a>, 
+                   <a href="#double-click-time">double-click-time</a>,
+                   <a href="#double-click-define">double-click-define</a>, 
+                   <a href="#pushed-define">pushed-define</a>
+            </p>
+	<ul>
+	<li><a name="long-click-time"><b>long-click-time</b></a>
+        <p>time in seconds that a key must be pressed to be evaluated as "long-click"</p>
+	</li><li><a name="long-click-define"><b>long-click-define</b>
+	<p>optional command to be executed on long clicks<BR/>
+           here everything is permitted which can also be entered on the command line of fhem</p>
+	</li><li><a name="short-click-define"><b>short-click-define</b></a>
+	<p>optional command to be executed on short clicks<BR/>
+           here everything is permitted which can also be entered on the command line of fhem</p>
+	</li><li><a name="double-click-time"><b>double-click-time</b></a>
+	<p>The time in seconds to wait for a second keypress. if the button is pressed twice within this time, the double-click event is triggerd </p>
+	</li><li><a name="double-click-define"><b>double-click-define</b></a>
+	<p>optional command to be executed on double clicks<BR/>
+           here everything is permitted which can also be entered on the command line of fhem</p>
+	</li><li><a name="pushed-click-define"><b>pushed-click-define</b></a>
+	<p>optional command to be executed when the button is pushed<BR/>
+           here everything is permitted which can also be entered on the command line of fhem</p>
+        </li></ul>
 =end html
 
 =begin html_DE
