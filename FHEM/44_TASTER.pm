@@ -1,5 +1,5 @@
 ############################################################
-# $Id: 44_TASTER.pm 1000 2016-08-29 20:00:00Z ThomasRamm $ #
+# $Id: 44_TASTER.pm 1002 2017-02-08 17:44:00Z ThomasRamm $ #
 #
 ############################################################
 package main;
@@ -41,13 +41,18 @@ sub TASTER_Initialize($) {
   #zusätzliche Benutzerdefinierte Attribute die auf der Oberfläche gesetzt
   #werden können. hier sollten alle Parameter rein
   $hash->{AttrList} = " "
+#    . " device"
+#    . " port"
+#    . " IODev"  #hat eine besondere Bedeutung, evtl hier das Hardwaremodul eintragen
     . " long-click-time"
     . " long-click-define"
+#   . " short-click-time" #Short-click benötigt keine Time, ist durch long-click festgelegt
     . " short-click-define"
     . " double-click-time"
-    . " double-click-define";
     . " pushed-define"
-  Log3 "global",4,"TASTER (?) << Initialize";
+    . " double-click-define";
+#   . " automatic-delay:5,10,15,20,30,45,60"; #Beispiel für define mit vorgegebenen erlaubten Wertena
+  Log3 "global",5,"TASTER (?) << Initialize";
 }
 
 ################################################################ DEFINE #####
@@ -57,7 +62,7 @@ sub TASTER_Initialize($) {
 sub TASTER_Define($$) {
   my ($hash,$def) = @_;
   my $name = $hash->{NAME};
-  Log3 $name,4,"TASTER ($name) >> Define";
+  Log3 $name,5,"TASTER ($name) >> Define";
   
   my @a = split( "[ \t][ \t]*", $def );
 
@@ -87,8 +92,10 @@ sub TASTER_Define($$) {
 
   #AssignIoPort($hash);
   #IOWrite schreibt später
+
+  $hash->{NOTIFYDEV} = "TYPE=TASTER";
   
-  Log3 $name,4,"TASTER ($name) << Define";
+  Log3 $name,5,"TASTER ($name) << Define";
 }
 
 ################################################################# UNDEF #####
@@ -98,11 +105,11 @@ sub TASTER_Define($$) {
 sub TASTER_Undef($) {
   my ($hash) = @_;
   my $name = $hash->{NAME};
-  Log3 $name,4,"TASTER ($name) >> Undef";
+  Log3 $name,5,"TASTER ($name) >> Undef";
 
   RemoveInternalTimer($hash);
 
-  Log3 $name,4,"TASTER ($name) << Undef";
+  Log3 $name,5,"TASTER ($name) << Undef";
 }
 
 #################################################################### SET #####
@@ -113,18 +120,18 @@ sub TASTER_Undef($) {
 sub TASTER_Set($@) {
   my ($hash,@a) = @_;
   my $name = $hash->{NAME};
-  Log3 $name,4,"TASTER ($name) >> Set";
+  Log3 $name,5,"TASTER ($name) >> Set";
  
   #FEHLERHAFTE PARAMETER ABFRAGEN
   if ( @a < 2 ) {
     Log3 $name,3,"\"set TASTER\" needs at least an argument";
-    Log3 $name,4,"TASTER ($name) << Set";
+    Log3 $name,5,"TASTER ($name) << Set";
     return "\"set TASTER\" needs at least an argument";
   }
   #my $name = shift @a;
   my $opt =  $a[1]; #shift @a;
 
-  Log3 $name,5,"TASTER_Set Befehl=$opt";
+  Log3 $name,4,"TASTER_Set Befehl=$opt";
 
   #mögliche Set Eigenschaften und erlaubte Werte zurückgeben wenn ein unbekannter
   #Befehl kommt, dann wird das auch automatisch in die Oberfläche übernommen
@@ -134,13 +141,13 @@ sub TASTER_Set($@) {
         $param .= " $val:$sets{$val}";
     }
     Log3 $name,3,"Unknown argument $opt, choose one of $param";
-    Log3 $name,4,"TASTER ($name) << Set";
+    Log3 $name,5,"TASTER ($name) << Set";
     return "Unknown argument $opt, choose one of $param";
   }
   #Das eigentliche ausführen des Define-Befehls
   $hash->{STATE} = $opt;
   TASTER_Execute($hash);
-  Log3 $name,4,"TASTER ($name) << Set";
+  Log3 $name,5,"TASTER ($name) << Set";
 }
 
 #****************************************************************************
@@ -148,7 +155,7 @@ sub TASTER_Set($@) {
 sub TASTER_Execute($) {
   my ($hash) = @_;
   my $name = $hash->{NAME};
-  Log3 $name,4,"TASTER ($name) >> Execute";
+  Log3 $name,5,"TASTER ($name) >> Execute";
 
   #***** Auftrag lesen ******#
   my $state = $hash->{STATE};
@@ -158,7 +165,7 @@ sub TASTER_Execute($) {
     Log3 $name,4,"TASTER ($name) << Execute (kein Befehl definiert)";
     return;
   }
-  Log3 $name,3,"Befehl:$define";
+  Log3 $name,4,"$name Befehl:$define";
 
   #ein Perlausdruck wurde eingegeben
   if (substr($define, 0, 1) eq "{") {
@@ -167,7 +174,7 @@ sub TASTER_Execute($) {
   } else {
     fhem($define);
   }
-  Log3 $name,4,"TASTER ($name) << Execute";
+  Log3 $name,5,"TASTER ($name) << Execute";
   return;
 }
 
@@ -176,11 +183,11 @@ sub TASTER_Execute($) {
 sub TASTER_Get($@) {
   my ($hash, @a) = @_;
   my $name = $hash->{NAME};
-  Log3 $name,4,"TASTER ($name) >> Get";
+  Log3 $name,5,"TASTER ($name) >> Get";
 
   if ( @a < 2 ) {
     Log3 $name,3, "\"get TASTER\" needs at least one argument";
-    Log3 $name,4,"TASTER ($name) << Get";
+    Log3 $name,5,"TASTER ($name) << Get";
     return "\"get TASTER\" needs at least one argument";
   }
 
@@ -191,7 +198,7 @@ sub TASTER_Get($@) {
   if(!$gets{$opt}) {
     my @cList = keys %gets;
     Log3 $name,3,"Unknown argument $opt, choose one of " . join(" ", @cList) if ($opt ne "?");
-    Log3 $name,4,"TASTER ($name) << Get";
+    Log3 $name,5,"TASTER ($name) << Get";
     return "Unknown argument $opt, choose one of " . join(" ", @cList);
   }
   my $val = "";
@@ -200,20 +207,14 @@ sub TASTER_Get($@) {
   }
   Log3 $name,5,"TASTER_Get -> $opt:$val";
 
-#  if ($opt eq "write_hash_to_log") {
-#    Log3 $name,1,"----- Write Hash to Log START -----";
-#    Log3 $name,1,Dumper($hash);
-#    Log3 $name,1,"----- Write Hash to Log END -------"
-#  }
-
-  Log3 $name,4,"TASTER ($name) << Get";
+  Log3 $name,5,"TASTER ($name) << Get";
 }
 
 ################################################################## ATTR #####
 #
 sub TASTER_Attr(@) {
   my ($cmd,$name,$aName,$aVal) = @_;
-  Log3 $name,4,"TASTER ($name) >> Attr";  
+  Log3 $name,5,"TASTER ($name) >> Attr";  
   # $cmd can be "del" or "set"
   # aName and aVal are Attribute name and value
   if ($cmd eq "set") {
@@ -225,7 +226,7 @@ sub TASTER_Attr(@) {
       }
     }
   }
-  Log3 $name,4,"TASTER ($name) << Attr";
+  Log3 $name,5,"TASTER ($name) << Attr";
   return undef;
 }
 
@@ -237,29 +238,34 @@ sub TASTER_Notify($$) {
   my ($hash, $dev_hash) = @_;
   my $name = $hash->{NAME}; # own name / hash
   my $devName = $dev_hash->{NAME}; # Device that created the events
-  Log3 $name,4,"TASTER ($name) >> Notify";
+  Log3 $name,5,"TASTER ($name) >> Notify";
 
-  my $device = $hash->{device};
+  my $device = $hash->{device} // "";
+
   return if ($device ne $devName);
 
   my $port = $hash->{port};
+  $port //= "";
 
+  my $value = "";
   my $max = int(@{$dev_hash->{CHANGED}}); # number of events / changes
   for (my $i = 0; $i < $max; $i++) {
     my $s = $dev_hash->{CHANGED}[$i];
-    return if ($s !~ /^$port/);
-
-    my @param = split(':',$s);
-    return if ($port ne $param[0]);
-
-    my $value = trim($param[1]);
+      if ($port ne "") {
+	return if ($s !~ /^$port/);
+	my @param = split(':',$s);
+    	return if ($port ne $param[0]);
+	$value = trim($param[1]);
+      } else {
+	$value = $s;
+      }
 
     #***** Änderung am Status meines Devices! *****#
     readingsSingleUpdate($hash,"value",$value,0);
-    Log3 $name,3,"TASTER ($name) -> Notify -> longpress wird ausgewertet";
+    Log3 $name,4,"TASTER ($name) -> Notify -> longpress wird ausgewertet";
     Longpress($hash);
   }
-  Log3 $name,4,"TASTER ($name) << Notify";
+  Log3 $name,5,"TASTER ($name) << Notify";
 }
 sub ltrim($) { my $s = shift; $s =~ s/^\s+//;       return $s };
 sub rtrim($) { my $s = shift; $s =~ s/\s+$//;       return $s };
@@ -278,7 +284,7 @@ sub  trim($) { my $s = shift; $s =~ s/^\s+|\s+$//g; return $s };
 sub Longpress($) {
   my ($hash) = @_;
   my $name = $hash->{NAME};
-  Log3 $name,4,"TASTER ($name) >> Longpress";
+  Log3 $name,5,"TASTER ($name) >> Longpress";
   RemoveInternalTimer($hash);
   my $start = gettimeofday;
   my $VALUE = ReadingsVal($name,"value",undef);
@@ -292,7 +298,7 @@ sub Longpress($) {
       readingsSingleUpdate($hash,"DoubleClick","true",0);
     }
     setzeStatus($hash,"pushed");
-    Log3 $name,3,"TASTER ($name) << Longpress state=gedrückt";
+    Log3 $name,5,"TASTER ($name) << Longpress state=gedrückt";
     return;
   }
   #***** Taster losgelassen *****#
@@ -308,7 +314,7 @@ sub Longpress($) {
   if ($doubleClick eq "true") {
     readingsSingleUpdate($hash,"DoubleClick","off",0);
     setzeStatus($hash,"double-click");
-    Log3 $name,4,"TASTER ($name) << Longpress state=double-click";
+    Log3 $name,5,"TASTER ($name) << Longpress state=double-click";
     return;
 
   #wenn Doppelklick aktiviert ist muss erst noch die Zeit abgewartet
@@ -316,7 +322,7 @@ sub Longpress($) {
   } elsif ($doubleClick eq "off" && $doubleClickTime > 0) {  
     readingsSingleUpdate($hash,"DoubleClick","wait",0);
     InternalTimer(gettimeofday()+$doubleClickTime, "Longpress", $hash, 0);
-    Log3 $name,4,"TASTER ($name) << Longpress state=wait for double click";
+    Log3 $name,5,"TASTER ($name) << Longpress state=wait for double click";
     return;
   }
   
@@ -326,7 +332,7 @@ sub Longpress($) {
   #* Short-click auswerten
   if ((!defined $down) || $longTime == 0) {
     setzeStatus($hash,"short-click");
-    Log3 $name,4,"TASTER ($name) << Longpress state=short-click";
+    Log3 $name,5,"TASTER ($name) << Longpress state=short-click";
     return;
   }
 
@@ -335,10 +341,10 @@ sub Longpress($) {
   my $status = ($longTime < $sekunden)? "long-click" : "short-click";
   readingsSingleUpdate($hash,"click-time",$sekunden,0);
   
-  Log3 $name,3,"sekunden=$sekunden, status=$status, longtime=$longTime";
+  Log3 $name,4,"sekunden=$sekunden, status=$status, longtime=$longTime";
   
   setzeStatus($hash,$status);
-  Log3 $name,4,"TASTER ($name) << Longpress state=$status";
+  Log3 $name,5,"TASTER ($name) << Longpress state=$status";
   return;
 }
 
@@ -352,8 +358,8 @@ sub setzeStatus($$) {
 1;
 
 =pod
-=begin html
 
+=begin html
 <a name="TASTER"></a>
         <h3>TASTER</h3>
         <p>Logical modul to extend a "on"/"off" reading for the possibility to evaluate the following states from an keystroke
