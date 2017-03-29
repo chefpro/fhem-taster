@@ -41,17 +41,12 @@ sub TASTER_Initialize($) {
   #zusätzliche Benutzerdefinierte Attribute die auf der Oberfläche gesetzt
   #werden können. hier sollten alle Parameter rein
   $hash->{AttrList} = " "
-#    . " device"
-#    . " port"
-#    . " IODev"  #hat eine besondere Bedeutung, evtl hier das Hardwaremodul eintragen
     . " long-click-time"
     . " long-click-define"
-#   . " short-click-time" #Short-click benötigt keine Time, ist durch long-click festgelegt
     . " short-click-define"
     . " double-click-time"
     . " pushed-define"
     . " double-click-define";
-#   . " automatic-delay:5,10,15,20,30,45,60"; #Beispiel für define mit vorgegebenen erlaubten Wertena
   Log3 "global",5,"TASTER (?) << Initialize";
 }
 
@@ -79,13 +74,12 @@ sub TASTER_Define($$) {
   $hash->{port} = $a[3];
 
   #als Ausgangswert gehe ich davon aus das das TASTER offen ist
-  $hash->{STATE_position} = 0;
   $hash->{STATE} = "short-click";
 
   #Als Vorgabe einige Attribute definieren, das macht weniger Arbeit als sie
   #bei jedem TASTER komplett neu zu erfassen
 
-  $attr{$name}{"long-click-time"} = 0.5;    #wird der Taster länger als 1/2 Sekunde gedrückt ist es ein long-click
+  $attr{$name}{"long-click-time"} = 1;    #wird der Taster länger als 1 Sekunde gedrückt ist es ein long-click
   $attr{$name}{"double-click-time"} = 0.5;  #Zeit zwischen zwei click die zu einen double-click führen
   $attr{$name}{"webCmd"} = "short-click:long-click:double-click";
   $attr{$name}{"devStateIcon"} = 'short-click:control_on_off@green long-click:control_on_off@blue pushed:control_on_off@red double-click:control_on_off@orange';
@@ -93,7 +87,7 @@ sub TASTER_Define($$) {
   #AssignIoPort($hash);
   #IOWrite schreibt später
 
-  $hash->{NOTIFYDEV} = "TYPE=TASTER";
+  $hash->{NOTIFYDEV} = $a[2];
   
   Log3 $name,5,"TASTER ($name) << Define";
 }
