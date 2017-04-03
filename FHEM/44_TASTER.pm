@@ -282,7 +282,7 @@ sub Longpress($) {
   RemoveInternalTimer($hash);
   my $start = gettimeofday;
   my $VALUE = ReadingsVal($name,"value",undef);
-  my $doubleClick = ReadingsVal($name,"DoubleClick",undef);
+  my $doubleClick = ReadingsVal($name,"DoubleClick","");
 
   #***** Der Taster wird gerade gedrückt *****#
   if ($VALUE eq "on") {
