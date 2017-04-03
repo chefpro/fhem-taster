@@ -1,10 +1,5 @@
-<<<<<<< HEAD
-﻿############################################################
-# $Id: 44_TASTER.pm 1002 2016-07-05 20:26:00Z ThomasRamm $ #
-=======
 ############################################################
 # $Id: 44_TASTER.pm 1002 2017-02-08 17:44:00Z ThomasRamm $ #
->>>>>>> release/v1
 #
 ############################################################
 package main;
@@ -56,10 +51,6 @@ sub TASTER_Initialize($) {
     . " double-click-time"
     . " pushed-define"
     . " double-click-define";
-<<<<<<< HEAD
-#   . " automatic-delay:5,10,15,20,30,45,60"; #Beispiel für define mit vorgegebenen erlaubten Wertena
-=======
->>>>>>> release/v1
   Log3 "global",5,"TASTER (?) << Initialize";
 }
 
@@ -246,11 +237,8 @@ sub TASTER_Notify($$) {
   my $name = $hash->{NAME}; # own name / hash
   my $devName = $dev_hash->{NAME}; # Device that created the events
   Log3 $name,5,"TASTER ($name) >> Notify";
-<<<<<<< HEAD
-=======
 
   my $device = $hash->{device} // "";
->>>>>>> release/v1
 
   return if ($device ne $devName);
 
