@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 ﻿############################################################
 # $Id: 44_TASTER.pm 1002 2016-07-05 20:26:00Z ThomasRamm $ #
+=======
+############################################################
+# $Id: 44_TASTER.pm 1002 2017-02-08 17:44:00Z ThomasRamm $ #
+>>>>>>> release/v1
 #
 ############################################################
 package main;
@@ -51,7 +56,10 @@ sub TASTER_Initialize($) {
     . " double-click-time"
     . " pushed-define"
     . " double-click-define";
+<<<<<<< HEAD
 #   . " automatic-delay:5,10,15,20,30,45,60"; #Beispiel für define mit vorgegebenen erlaubten Wertena
+=======
+>>>>>>> release/v1
   Log3 "global",5,"TASTER (?) << Initialize";
 }
 
@@ -79,19 +87,20 @@ sub TASTER_Define($$) {
   $hash->{port} = $a[3];
 
   #als Ausgangswert gehe ich davon aus das das TASTER offen ist
-  $hash->{STATE_position} = 0;
   $hash->{STATE} = "short-click";
 
   #Als Vorgabe einige Attribute definieren, das macht weniger Arbeit als sie
   #bei jedem TASTER komplett neu zu erfassen
 
-  $attr{$name}{"long-click-time"} = 0.5;    #wird der Taster länger als 1/2 Sekunde gedrückt ist es ein long-click
+  $attr{$name}{"long-click-time"} = 1;    #wird der Taster länger als 1 Sekunde gedrückt ist es ein long-click
   $attr{$name}{"double-click-time"} = 0.5;  #Zeit zwischen zwei click die zu einen double-click führen
   $attr{$name}{"webCmd"} = "short-click:long-click:double-click";
   $attr{$name}{"devStateIcon"} = 'short-click:control_on_off@green long-click:control_on_off@blue pushed:control_on_off@red double-click:control_on_off@orange';
 
   #AssignIoPort($hash);
   #IOWrite schreibt später
+
+  $hash->{NOTIFYDEV} = $a[2];
   
   Log3 $name,5,"TASTER ($name) << Define";
 }
@@ -237,8 +246,12 @@ sub TASTER_Notify($$) {
   my $name = $hash->{NAME}; # own name / hash
   my $devName = $dev_hash->{NAME}; # Device that created the events
   Log3 $name,5,"TASTER ($name) >> Notify";
+<<<<<<< HEAD
+=======
 
-  my $device = $hash->{device};
+  my $device = $hash->{device} // "";
+>>>>>>> release/v1
+
   return if ($device ne $devName);
 
   my $port = $hash->{port};
@@ -285,7 +298,7 @@ sub Longpress($) {
   RemoveInternalTimer($hash);
   my $start = gettimeofday;
   my $VALUE = ReadingsVal($name,"value",undef);
-  my $doubleClick = ReadingsVal($name,"DoubleClick",undef);
+  my $doubleClick = ReadingsVal($name,"DoubleClick","");
 
   #***** Der Taster wird gerade gedrückt *****#
   if ($VALUE eq "on") {
@@ -358,11 +371,64 @@ sub setzeStatus($$) {
 
 =begin html
 <a name="TASTER"></a>
-<h3>TASTER</h3>
-<ul>
-        <a name="TASTER"></a>
-		Only german documentation available
-</ul>
+        <h3>TASTER</h3>
+        <p>Logical modul to extend a "on"/"off" reading for the possibility to evaluate the following states from an keystroke
+<ul><li>short press</li>
+<li>long press</li>
+<li>press twice</li>
+<li>key is being pressed</li></ul>.
+The main focus in this module is to evaluate the various keystrokes. The visualisation of the button status is for debugging very helpfull.
+In the definition you can define the name of your module and the name of a reading (port,adress)</p>
+        <h4>Example</h4>
+        <p>
+            <code>define button1 TASTER myMcp20 PortB1</code>
+            <br />
+        </p>
+        <br />
+        <a name="TASTERdefine"></a>
+        <h4>Define</h4>
+        <code>define &lt;name&gt; TASTER &lt;device&gt; &lt;port&gt; </code>
+        <p><code>[&lt;device&gt;]</code><br />The device whose reading should be evaluated</p>
+        <p><code>&lt;port&gt;</code><br />The evaluated port / reading of the device</p>
+        <br />
+        <br />
+        <a name="TASTERset"></a>
+        <h4>Set</h4>
+	<a name="TASTERsetter">
+                <ul>
+                  <li><code>set &lt;name&gt; pushed</code></a><br />trigger event 'pushed' of the button, trigger associated commands</li>
+		  <li><code>set &lt;name&gt; short-click</code></a><br /> trigger event 'short-click' of the button, trigger associated commands</li>
+		  <li><code>set &lt;name&gt; double-click</code></a><br /> trigger event 'double-click' of the button, trigger associated commands</li>
+		  <li><code>set &lt;name&gt; long-click</code></a><br /> trigger event 'long-click' of the button, trigger associated commands</li>
+                </ul>
+        <br />
+        <h4>Attributes</h4>
+        <p>Module-specific attributes:
+                   <a href="#long-click-time">long-click-time</a>,
+                   <a href="#long-click-define">long-click-define</a>,
+                   <a href="#short-click-define">short-click-define</a>, 
+                   <a href="#double-click-time">double-click-time</a>,
+                   <a href="#double-click-define">double-click-define</a>, 
+                   <a href="#pushed-define">pushed-define</a>
+            </p>
+	<ul>
+	<li><a name="long-click-time"><b>long-click-time</b></a>
+        <p>time in seconds that a key must be pressed to be evaluated as "long-click"</p>
+	</li><li><a name="long-click-define"><b>long-click-define</b>
+	<p>optional command to be executed on long clicks<BR/>
+           here everything is permitted which can also be entered on the command line of fhem</p>
+	</li><li><a name="short-click-define"><b>short-click-define</b></a>
+	<p>optional command to be executed on short clicks<BR/>
+           here everything is permitted which can also be entered on the command line of fhem</p>
+	</li><li><a name="double-click-time"><b>double-click-time</b></a>
+	<p>The time in seconds to wait for a second keypress. if the button is pressed twice within this time, the double-click event is triggerd </p>
+	</li><li><a name="double-click-define"><b>double-click-define</b></a>
+	<p>optional command to be executed on double clicks<BR/>
+           here everything is permitted which can also be entered on the command line of fhem</p>
+	</li><li><a name="pushed-click-define"><b>pushed-click-define</b></a>
+	<p>optional command to be executed when the button is pushed<BR/>
+           here everything is permitted which can also be entered on the command line of fhem</p>
+        </li></ul>
 =end html
 
 =begin html_DE
