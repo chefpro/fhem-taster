@@ -1,5 +1,5 @@
 ############################################################
-# $Id: 44_TASTER.pm 1002 2017-03-31 17:44:00Z ThomasRamm $ #
+# $Id: 44_TASTER.pm 1003 2017-09-17 18:40:00Z ThomasRamm $ #
 #
 ############################################################
 package main;
@@ -88,10 +88,7 @@ sub TASTER_Define($$) {
   $attr{$name}{"webCmd"} = "short-click:long-click:double-click";
   $attr{$name}{"devStateIcon"} = 'short-click:control_on_off@green long-click:control_on_off@blue pushed:control_on_off@red double-click:control_on_off@orange';
 
-  #AssignIoPort($hash);
-  #IOWrite schreibt später
-
-  $hash->{NOTIFYDEV} = $a[2];
+  $hash->{NOTIFYDEV} = "$hash->{device}";
   
   Log3 $name,5,"TASTER ($name) << Define";
 }
@@ -233,40 +230,48 @@ sub TASTER_Attr(@) {
 # heraus aufgerufen wenn ein Modul Events erzeugt hat. Damit kann
 # ein Modul auf Events anderer Module reagieren. 
 sub TASTER_Notify($$) {
-  my ($hash, $dev_hash) = @_;
-  my $name = $hash->{NAME}; # own name / hash
+  my ($own_hash, $dev_hash) = @_;
+  my $ownName = $own_hash->{NAME}; # own name / hash
   my $devName = $dev_hash->{NAME}; # Device that created the events
-  Log3 $name,5,"TASTER ($name) >> Notify";
+  Log3 $ownName,4,"TASTER ($ownName) >> Notify von $devName";
 
-  my $device = $hash->{device} // "";
+  return "" if(IsDisabled($ownName));
 
+  #hinterlegte Hardware für mein Taster, hat "mein" Modul angeschlagen?
+  my $device = $own_hash->{device} // "";
   return if ($device ne $devName);
 
-  my $port = $hash->{port};
-  $port //= "";
+  #hinterlegter Port für mein Taster, hat "mein" Port angeschlagen?
+  #dafür muss ich leider alle Events in einer Schleife durchgehen...
+  my $port = $own_hash->{port} //= "";
+  my $value = "noEvent";
+  my $events = deviceEvents($dev_hash,1);
+  return if (!$events);
 
-  my $value = "";
-  my $max = int(@{$dev_hash->{CHANGED}}); # number of events / changes
-  for (my $i = 0; $i < $max; $i++) {
-    my $s = $dev_hash->{CHANGED}[$i];
-      if ($port ne "") {
-	return if ($s !~ /^$port/);
-	my @param = split(':',$s);
-    	return if ($port ne $param[0]);
-	$value = trim($param[1]);
-      } else {
-	$value = $s;
-      }
-
-    #***** Änderung am Status meines Devices! *****#
-    readingsSingleUpdate($hash,"value",$value,0);
-    Log3 $name,4,"TASTER ($name) -> Notify -> longpress wird ausgewertet";
-    Longpress($hash);
+  foreach my $event (@{$events}) {
+    $event = "" if(!defined($event));
+    if ($port eq "") {
+      $value = $event;
+      last;
+    } else {
+      #prüfen ob der Port passt
+      next if ($event !~ /^$port/);
+      my @param = split(':',$event);
+      next if ($port ne $param[0]);
+      $value = trim($param[1]);
+      last;
+    }
   }
-  Log3 $name,5,"TASTER ($name) << Notify";
+  #Die Schleife hat keinen passenden Port gefunden. Exit
+  return if ($value eq "noEvent");
+
+  #***** Änderung am Status meines Devices! *****#
+  readingsSingleUpdate($own_hash,"value",$value,0);
+  Log3 $ownName,4,"TASTER ($ownName) -> Notify -> press wird ausgewertet";
+  Longpress($own_hash);
+  
+  Log3 $ownName,5,"TASTER ($ownName) << Notify";
 }
-sub ltrim($) { my $s = shift; $s =~ s/^\s+//;       return $s };
-sub rtrim($) { my $s = shift; $s =~ s/\s+$//;       return $s };
 sub  trim($) { my $s = shift; $s =~ s/^\s+|\s+$//g; return $s };
 
 # Berechnet den Status des Taster und setzt state
