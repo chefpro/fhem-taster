@@ -19,19 +19,28 @@ Wird ein Doppelklick definiert bedeutet dies natürlich das auch bei jedem einfa
 Der zuletzt erkannte Tastendruck wird im state-Reading gespeichert.
 Zusätzlich zur Auswertung des Tastendrucks kann man auch gleich noch einen Befehl hinterlegen der bei diesem Tastendruck ausgewertet werden soll, so dass man sich ein DOIF oder notify sparen kann. Das macht das ganze für mich etwas übersichtlicher.
 
-In der Definition wird das Hardwaremodul und [optional: das Reading (der Port/Adresse)] des "on"/"off" Tasters angegeben</p>
+In der Definition wird das Hardwaremodul und [optional: das Reading (der Port/Adresse)] des "on"/"off" Tasters angegeben
 
 **Beispiel**
 `define Taster1 TASTER myMcp20 PortB1`
 
-##Moduldefinition und -funktion##
+## Modul Installation
 
-###Define###
+durch den Befehl
+update add https://raw.githubusercontent.com/ThomasRamm/fhem-taster/master/controls_taster.txt
+wird das Modul dem allgemeinem Updateprozess hinzugefügt,
+mit update all wird dann sowohl fhem als auch dieses Modul aktualisiert.
+Details zu update findest du im [fhem wiki](https://wiki.fhem.de/wiki/Update#update_add)
+
+
+## Moduldefinition und -funktion ##
+
+### Define ###
 `define <name> TASTER <device> <port>`
 - device = Das Device in fhem dessen Reading ausgewertet werden soll
 - port = Der Auszuwertende Port/Reading des Device
 
-###Set###
+### Set ###
 `set <name> pushed`
 Status des devices auf 'pushed' setzen und verknüpfte aktionen auslösen
  
@@ -44,25 +53,25 @@ Status des devices auf 'pushed' setzen und verknüpfte aktionen auslösen
 `set <name> long-click`
  Status des devices auf 'long-click' setzen und verknüpfte aktionen auslösen
 
-###Attribute###
-####long-click-time####
+### Attribute ###
+#### long-click-time ####
   Zeit in Sekunden die eine Taste gedrückt werden muss um als "Langer Tastendruck" ausgewertet zu werden
-####long-click-define####
+#### long-click-define ####
   Optionaler Befehl der bei einem langen Tastendruck ausgeführt werden soll.
   Hier ist alles erlaubt was auch in der Befehlszeile von fhem eingegeben werden kann.
-####short-click-define####
+#### short-click-define ####
   Optionaler Befehl der bei einem kurzen Tastendruck ausgeführt werden soll.
   Hier ist alles erlaubt was auch in der Befehlszeile von fhem eingegeben werden kann.
-####double-click-time####
+#### double-click-time ####
   Zeit in Sekunden die nach einem Tastendruck gewartet werden soll. Erfolgt innerhalb dieser Zeit ein weiterer Tastendruck, so wird ein "Doppelter Tastendruck" ausgewertet.
-####double-click-define####
+#### double-click-define ####
   Optionaler Befehl der bei einem kurzen Tastendruck ausgeführt werden soll.
   Hier ist alles erlaubt was auch in der Befehlszeile von fhem eingegeben werden kann.
-####pushed-click-define####
+#### pushed-click-define ####
   Optionaler Befehl der bei einem kurzen Tastendruck ausgeführt werden soll.
   Hier ist alles erlaubt was auch in der Befehlszeile von fhem eingegeben werden kann.
 
-## Beispielkonfiguration inkl. Readings##
+## Beispielkonfiguration inkl. Readings ##
 Ich benutzt das Modul um bei einem einfachen Klick das Licht, bei einem Doppelklick meinen Rolladen zu bedienen. Fährt der Rolladen gerade, so reicht wiederrum ein einfacher Klick um ihn zu stoppen.
 
 ```
