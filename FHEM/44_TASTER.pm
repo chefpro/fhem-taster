@@ -258,7 +258,7 @@ sub TASTER_Notify($$) {
       next if ($event !~ /^$port/);
       my @param = split(':',$event);
       next if ($port ne $param[0]);
-      $value = trim($param[1]);
+      $value = myTrim($param[1]);
       last;
     }
   }
@@ -272,7 +272,7 @@ sub TASTER_Notify($$) {
   
   Log3 $ownName,5,"TASTER ($ownName) << Notify";
 }
-sub  trim($) { my $s = shift; $s =~ s/^\s+|\s+$//g; return $s };
+sub  myTrim($) { my $s = shift; $s =~ s/^\s+|\s+$//g; return $s };
 
 # Berechnet den Status des Taster und setzt state
 # Mögliche Werte:
