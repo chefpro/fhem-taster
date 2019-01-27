@@ -307,7 +307,7 @@ sub Longpress($) {
   #***** Der Taster wird gerade gedrückt *****#
   my $longTime = AttrVal($name,"long-click-time","");
   my $earlyLongClick = AttrVal($name,"early-long-click","off");
-  if ($VALUE eq "on") {
+  if ($VALUE eq "on" || $VALUE eq "ON") {
     readingsSingleUpdate($hash,'zeit-down',$start,0);
     if ($doubleClick eq "wait") {
       #ich warte auf den zweiten click und der Taster wurde tatsächlich nochmal gedrückt
