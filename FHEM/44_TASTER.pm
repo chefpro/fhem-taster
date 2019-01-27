@@ -50,7 +50,8 @@ sub TASTER_Initialize($) {
     . " short-click-define"
     . " double-click-time"
     . " pushed-define"
-    . " double-click-define";
+    . " double-click-define"
+    . " early-long-click";
   Log3 "global",5,"TASTER (?) << Initialize";
 }
 
@@ -87,6 +88,7 @@ sub TASTER_Define($$) {
   $attr{$name}{"double-click-time"} = 0.5;  #Zeit zwischen zwei click die zu einen double-click führen
   $attr{$name}{"webCmd"} = "short-click:long-click:double-click";
   $attr{$name}{"devStateIcon"} = 'short-click:control_on_off@green long-click:control_on_off@blue pushed:control_on_off@red double-click:control_on_off@orange';
+  $attr{$name}{"early-long-click"} = "off"; #long-click wird ausgeloest bevor die Taste losgelassen wird
 
   $hash->{NOTIFYDEV} = "$hash->{device}";
   
@@ -258,7 +260,7 @@ sub TASTER_Notify($$) {
       next if ($event !~ /^$port/);
       my @param = split(':',$event);
       next if ($port ne $param[0]);
-      $value = trim($param[1]);
+      $value = myTrim($param[1]);
       last;
     }
   }
@@ -272,8 +274,17 @@ sub TASTER_Notify($$) {
   
   Log3 $ownName,5,"TASTER ($ownName) << Notify";
 }
-sub  trim($) { my $s = shift; $s =~ s/^\s+|\s+$//g; return $s };
+sub  myTrim($) { my $s = shift; $s =~ s/^\s+|\s+$//g; return $s };
 
+sub TASTER_GetUpdate($) {
+  my ($hash) = @_;
+  my $name = $hash->{NAME};
+  my $STATE = ReadingsVal($name,"state",undef);
+  my $doubleClick = ReadingsVal($name,"DoubleClick","");
+  if ($STATE eq "pushed" && $doubleClick ne "true") {
+    setzeStatus($hash,"long-click");
+  }
+}
 # Berechnet den Status des Taster und setzt state
 # Mögliche Werte:
 #  * pushed
@@ -294,7 +305,9 @@ sub Longpress($) {
   my $doubleClick = ReadingsVal($name,"DoubleClick","");
 
   #***** Der Taster wird gerade gedrückt *****#
-  if ($VALUE eq "on") {
+  my $longTime = AttrVal($name,"long-click-time","");
+  my $earlyLongClick = AttrVal($name,"early-long-click","off");
+  if ($VALUE eq "on" || $VALUE eq "ON") {
     readingsSingleUpdate($hash,'zeit-down',$start,0);
     if ($doubleClick eq "wait") {
       #ich warte auf den zweiten click und der Taster wurde tatsächlich nochmal gedrückt
@@ -302,6 +315,9 @@ sub Longpress($) {
     }
     setzeStatus($hash,"pushed");
     Log3 $name,5,"TASTER ($name) << Longpress state=gedrückt";
+    if ($earlyLongClick eq "on") {
+      InternalTimer(gettimeofday()+$longTime, "TASTER_GetUpdate", $hash);
+    }
     return;
   }
   #***** Taster losgelassen *****#
@@ -309,7 +325,6 @@ sub Longpress($) {
   my $lastClick = ReadingsVal($name,"zeit-up",undef);
   my $down = ReadingsVal($name,"zeit-down",undef);
   my $doubleClickTime = AttrVal($name,"double-click-time","0");
-  my $longTime = AttrVal($name,"long-click-time","");
 
   readingsSingleUpdate($hash,"zeit-up",$start,0);
 
@@ -345,7 +360,9 @@ sub Longpress($) {
   readingsSingleUpdate($hash,"click-time",$sekunden,0);
   
   Log3 $name,4,"sekunden=$sekunden, status=$status, longtime=$longTime";
-  
+  if ($earlyLongClick eq "on" && $status eq "long-click") {
+    return;
+  }
   setzeStatus($hash,$status);
   Log3 $name,5,"TASTER ($name) << Longpress state=$status";
   return;
@@ -404,6 +421,7 @@ In the definition you can define the name of your module and the name of a readi
                    <a href="#double-click-time">double-click-time</a>,
                    <a href="#double-click-define">double-click-define</a>, 
                    <a href="#pushed-define">pushed-define</a>
+                   <a href="#early-long-click">early-long-click</a>
             </p>
 	<ul>
 	<li><a name="long-click-time"><b>long-click-time</b></a>
@@ -422,6 +440,8 @@ In the definition you can define the name of your module and the name of a readi
 	</li><li><a name="pushed-click-define"><b>pushed-click-define</b></a>
 	<p>optional command to be executed when the button is pushed<BR/>
            here everything is permitted which can also be entered on the command line of fhem</p>
+       </li><li><a name="early-long-click"><b>early-long-click</b></a>
+	<p>the long-click state will be triggered after time was running out. Even when the switch is not released.</p>
         </li></ul>
 =end html
 
@@ -469,6 +489,7 @@ In der Definition wird das Hardwaremodul und das Reading (der Port/Adresse) des 
                    <a href="#double-click-time">double-click-time</a>,
                    <a href="#double-click-define">double-click-define</a>, 
                    <a href="#pushed-define">pushed-define</a>
+                   <a href="#early-long-click">early-long-click</a>
             </p>
 	<ul>
 	<li><a name="long-click-time"><b>long-click-time</b></a>
@@ -488,8 +509,9 @@ In der Definition wird das Hardwaremodul und das Reading (der Port/Adresse) des 
 	</li><li><a name="pushed-click-define"><b>pushed-click-define</b></a>
 	<p>Optionaler Befehl der bei einem kurzen Tastendruck ausgeführt werden soll.<BR/>
            Hier ist alles erlaubt was auch in der Befehlszeile von fhem eingegeben werden kann.</p>
+	</li><li><a name="early-long-click"><b>early-long-click</b></a>
+	<p>Der long-click status wird gesetzt nachdem die Zeit abgelaufen ist, auch wenn die Taste noch nicht losgelassen ist.</p>
         </li></ul>
 =end html_DE
 
 =cut
-
