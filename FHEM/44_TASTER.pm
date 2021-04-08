@@ -306,8 +306,9 @@ sub Longpress($) {
 
   #***** Der Taster wird gerade gedrückt *****#
   my $longTime = AttrVal($name,"long-click-time","");
+  my $buttonPushedState = AttrVal($name,"button-pushed-state","on");
   my $earlyLongClick = AttrVal($name,"early-long-click","off");
-  if ($VALUE eq "on" || $VALUE eq "ON") {
+  if (lc($VALUE) eq lc($buttonPushedState)) {
     readingsSingleUpdate($hash,'zeit-down',$start,0);
     if ($doubleClick eq "wait") {
       #ich warte auf den zweiten click und der Taster wurde tatsächlich nochmal gedrückt
@@ -422,6 +423,7 @@ In the definition you can define the name of your module and the name of a readi
                    <a href="#double-click-define">double-click-define</a>, 
                    <a href="#pushed-define">pushed-define</a>
                    <a href="#early-long-click">early-long-click</a>
+                   <a href="#button-pushed-state">button-pushed-state</a>
             </p>
 	<ul>
 	<li><a name="long-click-time"><b>long-click-time</b></a>
@@ -442,7 +444,9 @@ In the definition you can define the name of your module and the name of a readi
            here everything is permitted which can also be entered on the command line of fhem</p>
        </li><li><a name="early-long-click"><b>early-long-click</b></a>
 	<p>the long-click state will be triggered after time was running out. Even when the switch is not released.</p>
-        </li></ul>
+  </li><li><a name="button-pushed-state"><b>button-pushed-state</b></a>
+	<p>the state which is the pushed state of the readings device. This is not case sensitive. Default: "on".</p>
+  </li></ul>
 =end html
 
 =begin html_DE
@@ -490,6 +494,7 @@ In der Definition wird das Hardwaremodul und das Reading (der Port/Adresse) des 
                    <a href="#double-click-define">double-click-define</a>, 
                    <a href="#pushed-define">pushed-define</a>
                    <a href="#early-long-click">early-long-click</a>
+                   <a href="#button-pushed-state">button-pushed-state</a>
             </p>
 	<ul>
 	<li><a name="long-click-time"><b>long-click-time</b></a>
@@ -511,6 +516,8 @@ In der Definition wird das Hardwaremodul und das Reading (der Port/Adresse) des 
            Hier ist alles erlaubt was auch in der Befehlszeile von fhem eingegeben werden kann.</p>
 	</li><li><a name="early-long-click"><b>early-long-click</b></a>
 	<p>Der long-click status wird gesetzt nachdem die Zeit abgelaufen ist, auch wenn die Taste noch nicht losgelassen ist.</p>
+  </li><li><a name="button-pushed-state"><b>button-pushed-state</b></a>
+	<p>the state which is the pushed state of the readings device. This is not case sensitive. Default: "on".</p>
         </li></ul>
 =end html_DE
 
