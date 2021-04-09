@@ -268,6 +268,9 @@ sub TASTER_Notify($$) {
   #Die Schleife hat keinen passenden Port gefunden. Exit
   return if ($value eq "noEvent");
 
+  my $oldValue = ReadingsVal($ownName,"value",undef);
+  return if ($oldValue eq $value);
+
   #***** Änderung am Status meines Devices! *****#
   readingsSingleUpdate($own_hash,"value",$value,0);
   Log3 $ownName,4,"TASTER ($ownName) -> Notify -> press wird ausgewertet";
