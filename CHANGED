@@ -1,3 +1,7 @@
 FHEM ROLLO last change:
 2017-03-31
  - Updatemechanismus von fhem integriert
+2021-04-09
+ - double-long-click implementiert
+ - Verschiedene Bugfixes
+ - Wiederholende Events für alle "*long*" Events implementiert
