@@ -7,11 +7,12 @@ Das Modul wertet on/off Stati eines Readings oder anderen Device aus und zählt/
 - kurzer Tastendruck
 - langer Tastendruck
 - doppelter Tastendruck
+- doppelter Tastendruck, zweiter lang
 - Taste wird gerade gedrückt
 
 Getestet habe ich dieses Modul bisher mit einem I2C_MCP23017, einer Siemens S5 Steuerungsanlage sowie mit Dummy die den Status On/Off annehmen können.
 Das Hauptaugenmerk liegt bei diesem Modul darauf die verschiedenen Tastendrücke auszuwerten, die Darstellung
-der Tasten auf der Oberfläche und die Set-Methoden dienen mehr dem Debugging, nichts desto trotz wird der letzte Tastendruck bzw. ein "Wird gerade gedrückt" visuell dargestellt und es ist möglich die verschiedenen Tastendrücke per set zu simulieren. 
+der Tasten auf der Oberfläche und die Set-Methoden dienen mehr dem Debugging, nichts desto trotz wird der letzte Tastendruck bzw. ein "Wird gerade gedrückt" visuell dargestellt und es ist möglich die verschiedenen Tastendrücke per set zu simulieren.
 Die zur Darstellung benutzte devStateIcon-Definition sowie webCmd-Definition wird bei einem define automatisch mit erzeugt, so dass man sich da einiges an Tipp-Arbeit spart wenn man die Darstellung so übernimmt.
 
 Wird ein Doppelklick definiert bedeutet dies natürlich das auch bei jedem einfachen Tastendruck kurz gewartet wird ob ein zweiter folgt und somit die Schaltvorgänge alle etwas verzögert ausgeführt werden. Ich habe eine Wartezeit von 0,5 Sekunden bei den meisten Tastern und empfinde es als nicht störend. Soll der doppelte Tastendruck nicht ausgewertet werden, sondern nur ein kurzer oder langer Tastendruck, dann einfach die Definitionen für den doppelten Tastendruck löschen oder die Wartezeit auf 0 setzen, dann werden die Schaltvorgänge wieder sofort ausgeführt.
@@ -42,16 +43,19 @@ Details zu update findest du im [fhem wiki](https://wiki.fhem.de/wiki/Update#upd
 
 ### Set ###
 `set <name> pushed`
-Status des devices auf 'pushed' setzen und verknüpfte aktionen auslösen
- 
+Status des Devices auf 'pushed' setzen und verknüpfte Aktionen auslösen
+
 `set <name> short-click`
- Status des devices auf 'short-click' setzen und verknüpfte aktionen auslösen
- 
+ Status des Devices auf 'short-click' setzen und verknüpfte Aktionen auslösen
+
 `set <name> double-click`
- Status des devices auf 'double-click' setzen und verknüpfte aktionen auslösen
- 
+ Status des Devices auf 'double-click' setzen und verknüpfte Aktionen auslösen
+
 `set <name> long-click`
- Status des devices auf 'long-click' setzen und verknüpfte aktionen auslösen
+ Status des Devices auf 'long-click' setzen und verknüpfte Aktionen auslösen
+
+`set <name> double-long-click`
+ Status des Devices auf 'double-long-click' setzen und verknüpfte Aktionen auslösen
 
 ### Attribute ###
 #### long-click-time ####
@@ -70,6 +74,25 @@ Status des devices auf 'pushed' setzen und verknüpfte aktionen auslösen
 #### pushed-click-define ####
   Optionaler Befehl der bei einem kurzen Tastendruck ausgeführt werden soll.
   Hier ist alles erlaubt was auch in der Befehlszeile von fhem eingegeben werden kann.
+#### early-long-click ####
+	Der long-click status wird gesetzt nachdem die Zeit abgelaufen ist, auch wenn die Taste noch nicht losgelassen ist.
+#### button-pushed-state ####
+	Der status des readings der als pressed gewertet wird. Default: "on"
+#### repeate-long-click ####
+  Wird ein "long-click" detektiert und  ist eingeschaltet, wird das "long-click" Event wiederholt bis die Taste losgelassen wird.
+#### repeate-long-click-time ####
+  Das Interval in dem wiederholt wird in Sekunden.
+#### double-long-click-time ####
+  Zeit in Sekunden die bein zweiten Tastendruck gewartet werden soll bis es als "double-long-click" gewertet werden soll.
+#### double-long-click-define ####
+  Optionaler Befehl der bei einem "double-long-click" Tastendruck ausgeführt werden soll.
+           Hier ist alles erlaubt was auch in der Befehlszeile von fhem eingegeben werden kann.
+#### early-double-long-click ####
+  Der double-long-click status wird gesetzt nachdem die Zeit abgelaufen ist, auch wenn die Taste noch nicht losgelassen ist.
+#### repeate-double-long-click ####
+  Wird ein "double-long-click" detektiert und  ist eingeschaltet, wird das "double-long-click" Event wiederholt bis die Taste losgelassen wird.
+#### repeate-double-long-click-time ####
+  Das Interval in dem wiederholt wird in Sekunden.
 
 ## Beispielkonfiguration inkl. Readings ##
 Ich benutzt das Modul um bei einem einfachen Klick das Licht, bei einem Doppelklick meinen Rolladen zu bedienen. Fährt der Rolladen gerade, so reicht wiederrum ein einfacher Klick um ihn zu stoppen.
