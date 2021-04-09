@@ -167,6 +167,7 @@ sub TASTER_Execute($) {
   #ein Perlausdruck wurde eingegeben
   if (substr($define, 0, 1) eq "{") {
     eval($define);
+    if($@) { Log3 $name,1,"Error evaluating: " . $define . " Error: " . $@; }
   #ein fhem-Befehl wurde ausgegeben
   } else {
     fhem($define);
