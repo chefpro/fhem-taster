@@ -13,7 +13,8 @@ my %sets = (
   "pushed" => "noArg",
   "long-click" => "noArg",
   "short-click" => "noArg",
-  "double-click" => "noArg");
+  "double-click" => "noArg",
+  "double-long-click" => "noArg");
 
 #***** Ich benutze keine gets. zum testen von Funktionalität kann dies benutzt werden
 # auf der oberfläche gibt es dann einen neuen Schalter der die Subroutine TASTER_Get
@@ -51,7 +52,15 @@ sub TASTER_Initialize($) {
     . " double-click-time"
     . " pushed-define"
     . " double-click-define"
-    . " early-long-click";
+    . " early-long-click"
+    . " button-pushed-state"
+    . " repeate-long-click"
+    . " repeate-long-click-time"
+    . " double-long-click-time"
+    . " double-long-click-define"
+    . " early-double-long-click"
+    . " repeate-double-long-click"
+    . " repeate-double-long-click-time";
   Log3 "global",5,"TASTER (?) << Initialize";
 }
 
@@ -89,6 +98,14 @@ sub TASTER_Define($$) {
   $attr{$name}{"webCmd"} = "short-click:long-click:double-click";
   $attr{$name}{"devStateIcon"} = 'short-click:control_on_off@green long-click:control_on_off@blue pushed:control_on_off@red double-click:control_on_off@orange';
   $attr{$name}{"early-long-click"} = "off"; #long-click wird ausgeloest bevor die Taste losgelassen wird
+  $attr{$name}{"button-pushed-state"} = "on";
+  $attr{$name}{"repeate-long-click"} = "off";
+  $attr{$name}{"repeate-long-click-time"} = 0.5;
+
+  $attr{$name}{"double-long-click-time"} = 1;
+  $attr{$name}{"early-double-long-click"} = "off";
+  $attr{$name}{"repeate-double-long-click"} = "off";
+  $attr{$name}{"repeate-double-long-click-time"} = 0.5;
 
   $hash->{NOTIFYDEV} = "$hash->{device}";
   
@@ -280,21 +297,65 @@ sub TASTER_Notify($$) {
 }
 sub  myTrim($) { my $s = shift; $s =~ s/^\s+|\s+$//g; return $s };
 
-sub TASTER_GetUpdate($) {
+# wertet repeate long click aus
+sub TASTER_RepeateLongClick($) {
   my ($hash) = @_;
   my $name = $hash->{NAME};
   my $STATE = ReadingsVal($name,"state",undef);
   my $doubleClick = ReadingsVal($name,"DoubleClick","");
-  if ($STATE eq "pushed" && $doubleClick ne "true") {
+  my $repeateLongClickTime = AttrVal($name,"repeate-long-click-time","0.5");
+  my $repeateDoubleLongClick = AttrVal($name,"repeate-double-long-click-time","0.5");
+  if ($STATE eq "long-click" && $doubleClick ne "true") {
     setzeStatus($hash,"long-click");
+    InternalTimer(gettimeofday()+$repeateLongClickTime, "TASTER_RepeateLongClick", $hash);
+  }
+  if ($STATE eq "double-long-click" && $doubleClick eq "true") {
+    setzeStatus($hash,"double-long-click");
+    InternalTimer(gettimeofday()+$repeateDoubleLongClick, "TASTER_RepeateLongClick", $hash);
   }
 }
+
+# wertet early long click aus
+sub TASTER_EarlyLongPress($) {
+  my ($hash) = @_;
+  my $name = $hash->{NAME};
+  my $STATE = ReadingsVal($name,"state",undef);
+  my $doubleClick = ReadingsVal($name,"DoubleClick","");
+  my $repeateLongClick = AttrVal($name,"repeate-long-click","");
+  my $repeateLongClickTime = AttrVal($name,"repeate-long-click-time","0.5");
+
+  if ($STATE eq "pushed" && $doubleClick ne "true") {
+    setzeStatus($hash,"long-click");
+    if ($repeateLongClick eq "on") {
+      InternalTimer(gettimeofday()+$repeateLongClickTime, "TASTER_RepeateLongClick", $hash);
+    }
+  }
+}
+
+# wertet early double long click aus
+sub TASTER_EarlyDoubleLongPress($) {
+  my ($hash) = @_;
+  my $name = $hash->{NAME};
+  my $STATE = ReadingsVal($name,"state",undef);
+  my $doubleClick = ReadingsVal($name,"DoubleClick","");
+  my $repeateDoubleLongClick = AttrVal($name,"repeate-double-long-click","");
+  my $repeateDoubleLongClickTime = AttrVal($name,"repeate-double-long-click-time","0.5");
+
+  if ($STATE eq "pushed" && $doubleClick eq "true") {
+    setzeStatus($hash,"double-long-click");
+    if ($repeateDoubleLongClick eq "on") {
+      InternalTimer(gettimeofday()+$repeateDoubleLongClickTime, "TASTER_RepeateLongClick", $hash);
+    }
+  }
+}
+
 # Berechnet den Status des Taster und setzt state
 # Mögliche Werte:
 #  * pushed
 #  * double-click
 #  * short-click
 #  * long-click
+#  * double-long-click
 #der State solch eines Buttons ist on,long oder short, je nachdem was
 #gedrückt worden ist. Im Toggle steht entweder die Zeit zu dem der
 #schalter gedrückt worden ist, oder die Anzahl Sekunden wie lange er
@@ -304,14 +365,16 @@ sub Longpress($) {
   my $name = $hash->{NAME};
   Log3 $name,5,"TASTER ($name) >> Longpress";
   RemoveInternalTimer($hash);
-  my $start = gettimeofday;
+  my $start = gettimeofday();
   my $VALUE = ReadingsVal($name,"value",undef);
   my $doubleClick = ReadingsVal($name,"DoubleClick","");
 
   #***** Der Taster wird gerade gedrückt *****#
-  my $longTime = AttrVal($name,"long-click-time","");
+  my $longClickTime = AttrVal($name,"long-click-time","1.0");
+  my $longDoubleClickTime = AttrVal($name,"long-double-click-time","1.0");
   my $buttonPushedState = AttrVal($name,"button-pushed-state","on");
   my $earlyLongClick = AttrVal($name,"early-long-click","off");
+  my $earlyDoubleLongClick = AttrVal($name,"early-double-long-click","off");
   if (lc($VALUE) eq lc($buttonPushedState)) {
     readingsSingleUpdate($hash,'zeit-down',$start,0);
     if ($doubleClick eq "wait") {
@@ -320,8 +383,11 @@ sub Longpress($) {
     }
     setzeStatus($hash,"pushed");
     Log3 $name,5,"TASTER ($name) << Longpress state=gedrückt";
-    if ($earlyLongClick eq "on") {
-      InternalTimer(gettimeofday()+$longTime, "TASTER_GetUpdate", $hash);
+    if ($earlyLongClick eq "on" && $doubleClick ne "true") {
+      InternalTimer(gettimeofday()+$longClickTime, "TASTER_EarlyLongPress", $hash);
+    }
+    if ($earlyDoubleLongClick eq "on" && $doubleClick ne "off") {
+      InternalTimer(gettimeofday()+$longDoubleClickTime, "TASTER_EarlyDoubleLongPress", $hash);
     }
     return;
   }
@@ -336,24 +402,38 @@ sub Longpress($) {
   #doppel-click
   if ($doubleClick eq "true") {
     readingsSingleUpdate($hash,"DoubleClick","off",0);
-    setzeStatus($hash,"double-click");
-    Log3 $name,5,"TASTER ($name) << Longpress state=double-click";
+    if ((!defined $down) || $longDoubleClickTime == 0) {
+      setzeStatus($hash,"double-click");
+      Log3 $name,5,"TASTER ($name) << Longpress state=double-click";
+      return;
+    }
+    my $sekunden = $start - $down;
+    my $status = ($longClickTime < $sekunden)? "double-long-click" : "double-click";
+    readingsSingleUpdate($hash,"click-time",$sekunden,0);
+
+    Log3 $name,4,"sekunden=$sekunden, status=$status, longtime=$longClickTime";
+
+    if ($earlyDoubleLongClick eq "on" && $status eq "double-long-click") {
+      return;
+    }
+    setzeStatus($hash,$status);
+    Log3 $name,5,"TASTER ($name) << Longpress state=$status";
     return;
 
   #wenn Doppelklick aktiviert ist muss erst noch die Zeit abgewartet
   #werden bevor die Aktion ausgewertet wird
-  } elsif ($doubleClick eq "off" && $doubleClickTime > 0) {  
+  } elsif ($doubleClick eq "off" && $doubleClickTime > 0) {
     readingsSingleUpdate($hash,"DoubleClick","wait",0);
     InternalTimer(gettimeofday()+$doubleClickTime, "Longpress", $hash, 0);
     Log3 $name,5,"TASTER ($name) << Longpress state=wait for double click";
     return;
   }
-  
+
   #ich will nicht auf doppel-click warten, oder die Zeit ist vorbei
   readingsSingleUpdate($hash,"DoubleClick","off",0) if ($doubleClick ne "off");
 
   #* Short-click auswerten
-  if ((!defined $down) || $longTime == 0) {
+  if ((!defined $down) || $longClickTime == 0) {
     setzeStatus($hash,"short-click");
     Log3 $name,5,"TASTER ($name) << Longpress state=short-click";
     return;
@@ -361,10 +441,10 @@ sub Longpress($) {
 
   #* Long-click auswerten
   my $sekunden = $start - $down;
-  my $status = ($longTime < $sekunden)? "long-click" : "short-click";
+  my $status = ($longClickTime < $sekunden)? "long-click" : "short-click";
   readingsSingleUpdate($hash,"click-time",$sekunden,0);
-  
-  Log3 $name,4,"sekunden=$sekunden, status=$status, longtime=$longTime";
+
+  Log3 $name,4,"sekunden=$sekunden, status=$status, longtime=$longClickTime";
   if ($earlyLongClick eq "on" && $status eq "long-click") {
     return;
   }
@@ -392,6 +472,7 @@ sub setzeStatus($$) {
 <ul><li>short press</li>
 <li>long press</li>
 <li>press twice</li>
+<li>press twice, second long</li>
 <li>key is being pressed</li></ul>.
 The main focus in this module is to evaluate the various keystrokes. The visualisation of the button status is for debugging very helpfull.
 In the definition you can define the name of your module and the name of a reading (port,adress)</p>
@@ -416,18 +497,26 @@ In the definition you can define the name of your module and the name of a readi
 		  <li><code>set &lt;name&gt; short-click</code></a><br /> trigger event 'short-click' of the button, trigger associated commands</li>
 		  <li><code>set &lt;name&gt; double-click</code></a><br /> trigger event 'double-click' of the button, trigger associated commands</li>
 		  <li><code>set &lt;name&gt; long-click</code></a><br /> trigger event 'long-click' of the button, trigger associated commands</li>
+		  <li><code>set &lt;name&gt; double-long-click</code></a><br /> trigger event 'double-long-click' of the button, trigger associated commands</li>
                 </ul>
         <br />
         <h4>Attributes</h4>
         <p>Module-specific attributes:
                    <a href="#long-click-time">long-click-time</a>,
                    <a href="#long-click-define">long-click-define</a>,
-                   <a href="#short-click-define">short-click-define</a>, 
+                   <a href="#short-click-define">short-click-define</a>,
                    <a href="#double-click-time">double-click-time</a>,
-                   <a href="#double-click-define">double-click-define</a>, 
+                   <a href="#double-click-define">double-click-define</a>,
                    <a href="#pushed-define">pushed-define</a>
                    <a href="#early-long-click">early-long-click</a>
                    <a href="#button-pushed-state">button-pushed-state</a>
+                   <a href="#repeate-long-click">repeate-long-click</a>
+                   <a href="#repeate-long-click-time">repeate-long-click-time</a>
+                   <a href="#double-long-click-time">double-long-click-time</a>
+                   <a href="#double-long-click-define">double-long-click-define</a>
+                   <a href="#early-double-long-click">early-double-long-click</a>
+                   <a href="#repeate-double-long-click">repeate-double-long-click</a>
+                   <a href="#repeate-double-long-click-time">repeate-double-long-click-time</a>
             </p>
 	<ul>
 	<li><a name="long-click-time"><b>long-click-time</b></a>
@@ -446,10 +535,25 @@ In the definition you can define the name of your module and the name of a readi
 	</li><li><a name="pushed-click-define"><b>pushed-click-define</b></a>
 	<p>optional command to be executed when the button is pushed<BR/>
            here everything is permitted which can also be entered on the command line of fhem</p>
-       </li><li><a name="early-long-click"><b>early-long-click</b></a>
+  </li><li><a name="early-long-click"><b>early-long-click</b></a>
 	<p>the long-click state will be triggered after time was running out. Even when the switch is not released.</p>
   </li><li><a name="button-pushed-state"><b>button-pushed-state</b></a>
-	<p>the state which is the pushed state of the readings device. This is not case sensitive. Default: "on".</p>
+  <p>the state which is the pushed state of the readings device. This is not case sensitive. Default: "on".</p>
+  </li><li><a name="repeate-long-click"><b>repeate-long-click</b></a>
+  <p>When a "long-click" was detected and early-long-click is enabled, the "long-click" event will be repeated as long the key is pressed.</p>
+  </li><li><a name="repeate-long-click-time"><b>repeate-long-click-time</b></a>
+  <p>The interval a "long-click" will be repeated.</p>
+  </li><li><a name="double-long-click-time"><b>double-long-click-time</b></a>
+  <p>time in seconds that a key must be pressed the second time to be evaluated as "double-long-click"</p>
+  </li><li><a name="double-long-click-define"><b>double-long-click-define</b></a>
+  <p>optional command to be executed when the button is double long clicked.<BR/>
+           here everything is permitted which can also be entered on the command line of fhem</p>
+  </li><li><a name="early-double-long-click"><b>early-double-long-click</b></a>
+  <p>the double-long-click state will be triggered after time was running out. Even when the switch is not released.</p>
+  </li><li><a name="repeate-double-long-click"><b>repeate-double-long-click</b></a>
+  <p>When a "double-long-click" was detected and early-double-long-click is enabled, the "double-long-click" event will be repeated as long the key is pressed.</p>
+  </li><li><a name="repeate-double-long-click-time"><b>repeate-double-long-click-time</b></a>
+  <p>The interval a "double-long-click" will be repeated.</p>
   </li></ul>
 =end html
 
@@ -462,6 +566,7 @@ nach folgenden Stati auszuwerten
 <ul><li>kurzer Tastendruck</li>
 <li>langer Tastendruck</li>
 <li>doppelter Tastendruck</li>
+<li>doppelter Tastendruck, zweiter lang</li>
 <li>Taste wird gerade gedrückt</li></ul>.
 Das Hauptaugenmerk liegt bei diesem Modul darauf die verschiedenen Tastendrücke auszuwerten, die Darstellung
 der Tasten auf der Oberfläche und die Set-Methoden dienen mehr dem Debugging.
@@ -487,18 +592,26 @@ In der Definition wird das Hardwaremodul und das Reading (der Port/Adresse) des 
 		  <li><code>set &lt;name&gt; short-click</code></a><br /> Status des devices auf 'short-click' setzen, verknüpft aktionen auslösen</li>
 		  <li><code>set &lt;name&gt; double-click</code></a><br /> Status des devices auf 'double-click' setzen, verknüpft aktionen auslösen</li>
 		  <li><code>set &lt;name&gt; long-click</code></a><br /> Status des devices auf 'long-click' setzen, verknüpft aktionen auslösen</li>
+		  <li><code>set &lt;name&gt; double-long-click</code></a><br /> Status des devices auf 'double-long-click' setzen, verknüpft aktionen auslösen</li>
                 </ul>
         <br />
         <h4>Attribute</h4>
         <p>Modulspezifische attribute:
                    <a href="#long-click-time">long-click-time</a>,
                    <a href="#long-click-define">long-click-define</a>,
-                   <a href="#short-click-define">short-click-define</a>, 
+                   <a href="#short-click-define">short-click-define</a>,
                    <a href="#double-click-time">double-click-time</a>,
-                   <a href="#double-click-define">double-click-define</a>, 
+                   <a href="#double-click-define">double-click-define</a>,
                    <a href="#pushed-define">pushed-define</a>
                    <a href="#early-long-click">early-long-click</a>
                    <a href="#button-pushed-state">button-pushed-state</a>
+                   <a href="#repeate-long-click">repeate-long-click</a>
+                   <a href="#repeate-long-click-time">repeate-long-click-time</a>
+                   <a href="#double-long-click-time">double-long-click-time</a>
+                   <a href="#double-long-click-define">double-long-click-define</a>
+                   <a href="#early-double-long-click">early-double-long-click</a>
+                   <a href="#repeate-double-long-click">repeate-double-long-click</a>
+                   <a href="#repeate-double-long-click-time">repeate-double-long-click-time</a>
             </p>
 	<ul>
 	<li><a name="long-click-time"><b>long-click-time</b></a>
@@ -521,7 +634,22 @@ In der Definition wird das Hardwaremodul und das Reading (der Port/Adresse) des 
 	</li><li><a name="early-long-click"><b>early-long-click</b></a>
 	<p>Der long-click status wird gesetzt nachdem die Zeit abgelaufen ist, auch wenn die Taste noch nicht losgelassen ist.</p>
   </li><li><a name="button-pushed-state"><b>button-pushed-state</b></a>
-	<p>the state which is the pushed state of the readings device. This is not case sensitive. Default: "on".</p>
+	<p>Der status des readings der als pressed gewertet wird. Default: "on"</p>
+  </li><li><a name="repeate-long-click"><b>repeate-long-click</b></a>
+  <p>Wird ein "long-click" detektiert und  ist eingeschaltet, wird das "long-click" Event wiederholt bis die Taste losgelassen wird.</p>
+  </li><li><a name="repeate-long-click-time"><b>repeate-long-click-time</b></a>
+  <p>Das Interval in dem wiederholt wird in Sekunden.</p>
+  </li><li><a name="double-long-click-time"><b>double-long-click-time</b></a>
+  <p>Zeit in Sekunden die bein zweiten Tastendruck gewartet werden soll bis es als "double-long-click" gewertet werden soll.</p>
+  </li><li><a name="double-long-click-define"><b>double-long-click-define</b></a>
+  <p>Optionaler Befehl der bei einem "double-long-click" Tastendruck ausgeführt werden soll.<BR/>
+           Hier ist alles erlaubt was auch in der Befehlszeile von fhem eingegeben werden kann.</p>
+  </li><li><a name="early-double-long-click"><b>early-double-long-click</b></a>
+  <p>Der double-long-click status wird gesetzt nachdem die Zeit abgelaufen ist, auch wenn die Taste noch nicht losgelassen ist.</p>
+  </li><li><a name="repeate-double-long-click"><b>repeate-double-long-click</b></a>
+  <p>Wird ein "double-long-click" detektiert und  ist eingeschaltet, wird das "double-long-click" Event wiederholt bis die Taste losgelassen wird.</p>
+  </li><li><a name="repeate-double-long-click-time"><b>repeate-double-long-click-time</b></a>
+  <p>Das Interval in dem wiederholt wird in Sekunden.</p>
         </li></ul>
 =end html_DE
 
